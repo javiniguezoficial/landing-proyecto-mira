@@ -220,10 +220,11 @@ const Footer = ({
 
 // --- New Components for Hero ---
 
-const DataAnchor = () => {
+const DataAnchor = ({ isFloating = false, currentPage = 'home' }: { isFloating?: boolean, currentPage?: string }) => {
   const { scrollY } = useScroll();
   const [isAnchored, setIsAnchored] = useState(false);
   const [activeMarket, setActiveMarket] = useState('pollo');
+  const [isClosed, setIsClosed] = useState(false);
   
   // Transform values based on scroll position
   const scale = useTransform(scrollY, [0, 300], [1, 0.9]);
@@ -234,8 +235,26 @@ const DataAnchor = () => {
       setIsAnchored(window.scrollY > 400);
     };
     window.addEventListener('scroll', handleScroll);
+    // Initial check
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const showFloating = isFloating && (currentPage !== 'home' || isAnchored);
+
+  if (isFloating && !showFloating) return null;
+
+  if (isFloating && isClosed) {
+    return (
+      <button 
+        onClick={() => setIsClosed(false)}
+        className="fixed bottom-6 right-0 bg-slate-900 text-white p-3 rounded-l-xl shadow-2xl z-[100] hover:bg-mira-primary transition-colors flex items-center gap-2 group"
+      >
+        <TrendingUp size={16} className="group-hover:scale-110 transition-transform" />
+        <span className="text-xs font-bold uppercase tracking-wider hidden group-hover:block">Mercados</span>
+      </button>
+    );
+  }
 
   const markets = {
     pollo: { name: 'Pollo vivo', category: 'BLANCO', source: 'LONJA EBRO', price: '1.25 €', trend: '+1.2%', trendType: 'up', vol: '450 T', status: 'ALCISTA' },
@@ -248,12 +267,12 @@ const DataAnchor = () => {
 
   return (
     <motion.div
-      style={{ scale, opacity }}
+      style={!isFloating ? { scale, opacity } : {}}
       className={cn(
-        'bg-white rounded-xl overflow-hidden w-full max-w-sm transition-all duration-500 ease-spring z-40 border border-slate-200 shadow-2xl',
-        isAnchored 
-          ? 'fixed bottom-6 right-6 w-80 ring-1 ring-slate-900/5' 
-          : 'relative hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] hover:scale-[1.01]'
+        'bg-white rounded-xl overflow-hidden w-full max-w-sm transition-all duration-500 ease-spring border border-slate-200 shadow-2xl',
+        isFloating 
+          ? 'fixed bottom-6 right-6 w-80 ring-1 ring-slate-900/5 z-[100]' 
+          : 'relative hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] hover:scale-[1.01] z-40'
       )}
     >
       {/* Terminal Header */}
@@ -266,10 +285,17 @@ const DataAnchor = () => {
            </div>
            <span className="text-[10px] font-mono text-slate-400 ml-2">MIRA_TERMINAL_V2.0</span>
         </div>
-        <div className="flex items-center gap-1.5">
-           <span className="text-[10px] font-mono text-slate-500 mr-2">09 MAR 2026</span>
-           <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-           <span className="text-[10px] font-bold text-green-500 uppercase">LIVE</span>
+        <div className="flex items-center gap-3">
+           <div className="flex items-center gap-1.5">
+             <span className="text-[10px] font-mono text-slate-500 mr-2">09 MAR 2026</span>
+             <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+             <span className="text-[10px] font-bold text-green-500 uppercase">LIVE</span>
+           </div>
+           {isFloating && (
+             <button onClick={() => setIsClosed(true)} className="text-slate-400 hover:text-white transition-colors">
+               <X size={14} />
+             </button>
+           )}
         </div>
       </div>
 
@@ -357,7 +383,7 @@ const DataAnchor = () => {
             </div>
         </div>
 
-        {isAnchored && (
+        {(!isFloating && isAnchored) || (isFloating) ? (
             <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -368,7 +394,7 @@ const DataAnchor = () => {
                 <ChevronRight size={12} />
             </button>
             </motion.div>
-        )}
+        ) : null}
       </div>
     </motion.div>
   );
@@ -2307,53 +2333,100 @@ const SobreNosotrosPage = ({ onHomeClick, onLoginClick, onSignupClick, onAvisoLe
 export default function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'signup' | 'enterprise' | 'aviso-legal' | 'politica-cookies' | 'terminos-condiciones' | 'politica-privacidad' | 'sobre-nosotros'>('home');
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
+
   if (currentPage === 'login') {
-    return <LoginPage onHomeClick={() => setCurrentPage('home')} onSignupClick={() => setCurrentPage('signup')} />;
+    return (
+      <>
+        <LoginPage onHomeClick={() => setCurrentPage('home')} onSignupClick={() => setCurrentPage('signup')} />
+        <DataAnchor isFloating={true} currentPage={currentPage} />
+      </>
+    );
   }
 
   if (currentPage === 'signup') {
-    return <SignupPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} />;
+    return (
+      <>
+        <SignupPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} />
+        <DataAnchor isFloating={true} currentPage={currentPage} />
+      </>
+    );
   }
 
   if (currentPage === 'enterprise') {
-    return <EnterprisePage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />;
+    return (
+      <>
+        <EnterprisePage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />
+        <DataAnchor isFloating={true} currentPage={currentPage} />
+      </>
+    );
   }
 
   if (currentPage === 'aviso-legal') {
-    return <AvisoLegalPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />;
+    return (
+      <>
+        <AvisoLegalPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />
+        <DataAnchor isFloating={true} currentPage={currentPage} />
+      </>
+    );
   }
 
   if (currentPage === 'politica-cookies') {
-    return <PoliticaCookiesPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />;
+    return (
+      <>
+        <PoliticaCookiesPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />
+        <DataAnchor isFloating={true} currentPage={currentPage} />
+      </>
+    );
   }
 
   if (currentPage === 'terminos-condiciones') {
-    return <TerminosCondicionesPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />;
+    return (
+      <>
+        <TerminosCondicionesPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />
+        <DataAnchor isFloating={true} currentPage={currentPage} />
+      </>
+    );
   }
 
   if (currentPage === 'politica-privacidad') {
-    return <PoliticaPrivacidadPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />;
+    return (
+      <>
+        <PoliticaPrivacidadPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />
+        <DataAnchor isFloating={true} currentPage={currentPage} />
+      </>
+    );
   }
 
   if (currentPage === 'sobre-nosotros') {
-    return <SobreNosotrosPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />;
+    return (
+      <>
+        <SobreNosotrosPage onHomeClick={() => setCurrentPage('home')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} />
+        <DataAnchor isFloating={true} currentPage={currentPage} />
+      </>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-mira-primary/20 selection:text-mira-primary">
-      <Navbar onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onHomeClick={() => setCurrentPage('home')} />
-      <main>
-        <Hero onSignupClick={() => setCurrentPage('signup')} />
-        <TrustedSources />
-        <MarketIntelligence />
-        <SolutionsByRole />
-        <AIPrediction />
-        <NewsInsights />
-        <Pricing onSignupClick={() => setCurrentPage('signup')} onEnterpriseClick={() => setCurrentPage('enterprise')} />
-        <FAQContact onContactarVentasClick={() => setCurrentPage('enterprise')} />
-      </main>
-      <Footer onHomeClick={() => setCurrentPage('home')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} />
-    </div>
+    <>
+      <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-mira-primary/20 selection:text-mira-primary">
+        <Navbar onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} onHomeClick={() => setCurrentPage('home')} />
+        <main>
+          <Hero onSignupClick={() => setCurrentPage('signup')} />
+          <TrustedSources />
+          <MarketIntelligence />
+          <SolutionsByRole />
+          <AIPrediction />
+          <NewsInsights />
+          <Pricing onSignupClick={() => setCurrentPage('signup')} onEnterpriseClick={() => setCurrentPage('enterprise')} />
+          <FAQContact onContactarVentasClick={() => setCurrentPage('enterprise')} />
+        </main>
+        <Footer onHomeClick={() => setCurrentPage('home')} onAvisoLegalClick={() => setCurrentPage('aviso-legal')} onPoliticaCookiesClick={() => setCurrentPage('politica-cookies')} onTerminosClick={() => setCurrentPage('terminos-condiciones')} onPoliticaPrivacidadClick={() => setCurrentPage('politica-privacidad')} onSobreNosotrosClick={() => setCurrentPage('sobre-nosotros')} onContactarVentasClick={() => setCurrentPage('enterprise')} onLoginClick={() => setCurrentPage('login')} onSignupClick={() => setCurrentPage('signup')} />
+      </div>
+      <DataAnchor isFloating={true} currentPage={currentPage} />
+    </>
   );
 }
 
