@@ -1232,11 +1232,13 @@ const Pricing = ({ onSignupClick, onEnterpriseClick }: { onSignupClick?: () => v
             <h3 className="text-2xl font-heading font-bold text-slate-900 mb-2">Business</h3>
             <p className="text-sm text-slate-500 mb-8 font-medium">Para profesionales de compras y PYMES</p>
             <div className="mb-8 flex items-baseline gap-1">
-              <span className="text-6xl font-display font-bold text-slate-900">60€</span>
+              <span className="text-6xl font-display font-bold text-slate-900">{isAnnual ? '51€' : '60€'}</span>
               <span className="text-slate-500 font-medium">/mes</span>
             </div>
-            <p className="text-xs text-slate-400 mb-8 font-medium flex items-center gap-2">
-              <span className="bg-mira-mint/20 text-emerald-700 px-2 py-0.5 rounded font-bold">15% descuento anual</span>
+            <p className="text-xs text-slate-400 mb-8 font-medium flex items-center gap-2 min-h-[24px]">
+              {isAnnual && (
+                <span className="bg-mira-mint/20 text-emerald-700 px-2 py-0.5 rounded font-bold">15% descuento anual</span>
+              )}
             </p>
             <Button variant="primary" size="lg" className="w-full mb-10 shadow-xl shadow-mira-primary/30" onClick={onSignupClick}>Empezar prueba gratuita</Button>
             <ul className="space-y-5 text-sm text-slate-700 font-body font-medium">
